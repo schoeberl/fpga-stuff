@@ -16,21 +16,24 @@
     entity hello_world is
 
     port (
-        clk     : in std_logic;
-        led     : out std_logic
+        CLK_24MHZ     : in std_logic;
+        LED     : out std_logic_vector(7 downto 0)
     );
     end hello_world;
 
     architecture rtl of hello_world is
 
-        constant CLK_FREQ : integer := 20000000;
+        constant CLK_FREQ : integer := 24000000;
         constant BLINK_FREQ : integer := 1;
         constant CNT_MAX : integer := CLK_FREQ/BLINK_FREQ/2-1;
 
+        signal clk      : std_logic;
         signal cnt      : unsigned(24 downto 0);
         signal blink    : std_logic;
 
     begin
+
+        clk <= CLK_24MHZ;
 
         process(clk)
         begin
@@ -46,6 +49,7 @@
 
         end process;
 
-        led <= blink;
+        LED(7 downto 1) <= "1111111";
+        LED(0) <= blink;
 
     end rtl;
