@@ -1,5 +1,9 @@
 --
--- Info TBD
+-- Copyright: 2016, Technical University of Denmark, DTU Compute
+-- Author: Martin Schoeberl (martin@jopdesign.com)
+-- License: Simplified BSD License
+--
+-- Use Altera's JTAG communication (former known as JTAG UART)
 --
 
 library IEEE;
@@ -41,15 +45,19 @@ architecture rtl of jtag_com is
 	signal t_ena : std_logic;
 	signal t_pause : std_logic;
 
+	signal is_full_reg : std_logic;
+	signal data_reg : std_logic_vector(7 downto 0);
+
 	signal clk : std_logic;
 	signal cnt : unsigned(24 downto 0);
+
 begin
 
 	clk <= CLK_24MHZ;
 
-	r_val <= '1'; -- we should do some hand shaking
-	t_dav <= '1'; -- should only be set when a new data is there
-	r_dat <= t_dat; -- should manipulate it (add 1 or make upper case)
+	-- r_val <= '1'; -- we should do some hand shaking
+	-- t_dav <= '1'; -- should only be set when a new data is there
+	-- r_dat <= t_dat; -- should manipulate it (add 1 or make upper case)
 
 
 	jtag_inst : component alt_jtag_atlantic
@@ -71,7 +79,26 @@ begin
 			t_pause => t_pause
 		);
 
-	-- keep something blinking
+
+	process(clk)
+	begin
+		if (is_full_reg = '0') then
+			if (t_ena = '1') then
+				data_reg <= std_logic_vector(unsigned(t_dat) + 1);
+				is_full_reg <= '1';
+			end if;
+		else
+			if (r_ena = '1') then
+				is_full_reg <= '0';
+			end if;
+		end if;
+	end process;
+
+	t_dav <= not is_full_reg and not t_ena;
+	r_val <= is_full_reg;
+	r_dat <= data_reg;
+
+	-- keep something blinking to see we are alive
 	process(clk)
 	begin
 		if rising_edge(clk) then
